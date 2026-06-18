@@ -78,17 +78,24 @@ export default function BookingForm() {
         }),
       });
 
-      if (response.ok) {
-        setSubmitStatus("success");
-        // Здесь можно добавить сброс формы, если нужно
-        // Например: setName(""); setEmail(""); и т.д.
-      } else {
-        throw new Error('Ошибка сети или сервера');
-      }
-    } catch (error) {
-      console.error(error);
-      setSubmitStatus("error");
-    } finally {
+      const data = await response.json();
+
+    if (response.ok) {
+      setSubmitStatus("success");
+    } else {
+      console.error("API Error:", data);
+      throw new Error(data.error || data.message || "Ошибка сервера");
+    }
+    } 
+    catch (error) {
+  console.error(error);
+
+  if (error instanceof Error) {
+    alert(error.message);
+  }
+
+  setSubmitStatus("error");
+} finally {
       setIsSubmitting(false);
     }
   }
