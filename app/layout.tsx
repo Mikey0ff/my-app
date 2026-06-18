@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html
       lang="ru"
-      className={`${inter.variable} ${playfair.variable} scroll-smooth antialiased`}
+      className="sans-serif"
     >
       <body className="min-h-full bg-white font-sans text-slate-800">{children}</body>
     </html>

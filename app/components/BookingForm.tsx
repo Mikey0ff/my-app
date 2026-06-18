@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 
+// Константы остаются на верхнем уровне, так как они не являются хуками
 const subjects = ["Математика", "Русский язык", "Английский язык", "Физика", "Информатика"];
 const goals = ["Подготовка к ЕГЭ", "Подготовка к ОГЭ", "Повышение успеваемости", "Высшая математика"];
 const contactTimes = ["Утро (9:00–12:00)", "День (12:00–17:00)", "Вечер (17:00–21:00)"];
@@ -14,7 +15,7 @@ function getAvailableDates(): { value: string; label: string }[] {
   for (let i = 1; i <= 14; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
-    if (date.getDay() === 0) continue;
+    if (date.getDay() === 0) continue; // Пропускаем воскресенье
 
     const value = date.toISOString().split("T")[0];
     const label = date.toLocaleDateString("ru-RU", {
@@ -31,6 +32,7 @@ function getAvailableDates(): { value: string; label: string }[] {
 export default function BookingForm() {
   const availableDates = useMemo(() => getAvailableDates(), []);
 
+  // Все хуки useState должны находиться здесь, внутри компонента
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -41,8 +43,54 @@ export default function BookingForm() {
   const [timeSlot, setTimeSlot] = useState("");
   const [message, setMessage] = useState("");
 
-  function handleSubmit(e: FormEvent) {
+  // Хуки для управления состоянием отправки формы
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+
+    // Проверка, что все обязательные поля заполнены
+    if (!name || !email || !phone || !timeSlot) {
+      setSubmitStatus("error");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus("idle");
+
+    try {
+      const response = await fetch('/api/route', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          phone,
+          subject,
+          goal,
+          contactTime,
+          date,
+          timeSlot,
+          message,
+        }),
+      });
+
+      if (response.ok) {
+        setSubmitStatus("success");
+        // Здесь можно добавить сброс формы, если нужно
+        // Например: setName(""); setEmail(""); и т.д.
+      } else {
+        throw new Error('Ошибка сети или сервера');
+      }
+    } catch (error) {
+      console.error(error);
+      setSubmitStatus("error");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -212,12 +260,25 @@ export default function BookingForm() {
             />
           </div>
 
-          <button
+        <button
             type="submit"
+            disabled={isSubmitting}
             className="w-full rounded-full bg-indigo-600 py-3.5 text-base font-semibold text-white transition-all hover:bg-indigo-700"
           >
-            Отправить заявку
+            {isSubmitting ? "Отправка..." : "Отправить заявку"}
           </button>
+
+          {/* Блоки для отображения статуса отправки */}
+          {submitStatus === "success" && (
+            <div className="mt-4 p-4 bg-green-100 text-green-700 rounded-lg">
+              Заявка успешно отправлена!
+            </div>
+          )}
+          {submitStatus === "error" && (
+            <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-lg">
+              Что-то пошло не так. Пожалуйста, попробуйте еще раз.
+            </div>
+        )}
         </form>
       </div>
     </section>
